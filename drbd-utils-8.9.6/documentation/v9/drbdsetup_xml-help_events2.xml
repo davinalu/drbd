@@ -1,0 +1,15 @@
+<command name="events2">
+	<summary>Show the current state and all state changes of a resource, or of all resources.</summary>
+	<group>
+		<argument>resource</argument>
+		<argument>all</argument>
+	</group>
+	<option name="timestamps" type="flag">
+	</option>
+	<option name="statistics" type="flag">
+	</option>
+	<option name="now" type="flag">
+	</option>
+	<option name="color" type="string">
+	</option>
+</command>

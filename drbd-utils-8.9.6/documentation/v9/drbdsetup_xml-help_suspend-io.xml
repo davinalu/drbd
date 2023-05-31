@@ -1,0 +1,4 @@
+<command name="suspend-io">
+	<summary>Suspend I/O on a replicated device.</summary>
+	<argument>minor</argument>
+</command>

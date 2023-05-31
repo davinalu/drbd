@@ -1,0 +1,3 @@
+<command name="get-gi">
+	<argument>minor</argument>
+</command>

@@ -1,0 +1,3 @@
+<command name="invalidate">
+	<argument>minor</argument>
+</command>

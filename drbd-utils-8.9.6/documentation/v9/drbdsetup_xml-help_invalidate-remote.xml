@@ -1,0 +1,6 @@
+<command name="invalidate-remote">
+	<summary>Replace a peer's data of a volume with the local data.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<argument>volume</argument>
+</command>

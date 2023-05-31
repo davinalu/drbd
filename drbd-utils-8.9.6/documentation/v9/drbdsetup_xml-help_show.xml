@@ -1,0 +1,9 @@
+<command name="show">
+	<summary>Show the current configuration of a resource, or of all resources.</summary>
+	<group>
+		<argument>resource</argument>
+		<argument>all</argument>
+	</group>
+	<option name="show-defaults" type="flag">
+	</option>
+</command>

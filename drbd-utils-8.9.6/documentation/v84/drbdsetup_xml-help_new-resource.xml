@@ -1,0 +1,9 @@
+<command name="new-resource">
+	<argument>resource</argument>
+	<option name="cpu-mask" type="string">
+	</option>
+	<option name="on-no-data-accessible" type="handler">
+		<handler>io-error</handler>
+		<handler>suspend-io</handler>
+	</option>
+</command>

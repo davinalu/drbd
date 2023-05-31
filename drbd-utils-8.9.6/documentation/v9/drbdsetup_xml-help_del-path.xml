@@ -1,0 +1,7 @@
+<command name="del-path">
+	<summary>Remove a path (endpoint address pair) from a connection to a peer host.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<argument>local-addr</argument>
+	<argument>remote-addr</argument>
+</command>

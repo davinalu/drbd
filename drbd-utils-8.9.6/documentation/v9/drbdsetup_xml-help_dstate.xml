@@ -1,0 +1,4 @@
+<command name="dstate">
+	<summary>Show the current disk state of a lower-level device.</summary>
+	<argument>minor</argument>
+</command>

@@ -1,0 +1,3 @@
+<command name="del-minor">
+	<argument>minor</argument>
+</command>

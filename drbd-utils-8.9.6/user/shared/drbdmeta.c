@@ -4957,6 +4957,7 @@ struct format *new_cfg()
 
 	errno = 0;
 	pagesize = sysconf(_SC_PAGESIZE);
+	fprintf(stderr,"lytest pagesize =%d\n", pagesize);
 	if (errno) {
 		perror("could not determine pagesize");
 		exit(20);

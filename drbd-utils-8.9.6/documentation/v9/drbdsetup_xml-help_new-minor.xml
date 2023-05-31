@@ -1,0 +1,12 @@
+<command name="new-minor">
+	<summary>Create a new replicated device within a resource.</summary>
+	<argument>resource</argument>
+	<argument>minor</argument>
+	<argument>volume</argument>
+	<option name="max-bio-size" type="numeric">
+		<min>512</min>
+		<max>1048576</max>
+		<default>1048576</default>
+		<unit_prefix>1</unit_prefix>
+	</option>
+</command>

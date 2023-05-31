@@ -1,0 +1,5 @@
+<command name="forget-peer">
+	<summary>Completely remove any reference to a unconnected peer from meta-data.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+</command>

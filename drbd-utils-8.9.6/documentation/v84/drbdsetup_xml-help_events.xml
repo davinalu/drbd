@@ -1,0 +1,7 @@
+<command name="events">
+	<group>
+		<argument>resource</argument>
+		<argument>minor</argument>
+		<argument>all</argument>
+	</group>
+</command>

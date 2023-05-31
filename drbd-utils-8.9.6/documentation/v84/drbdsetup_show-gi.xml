@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<cmdsynopsis sepchar=" "><command moreinfo="none">drbdsetup</command><arg choice="plain" rep="norepeat">show-gi</arg><arg choice="plain" rep="norepeat"><replaceable>minor</replaceable></arg></cmdsynopsis>

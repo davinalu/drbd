@@ -1,0 +1,4 @@
+<command name="resume-io">
+	<summary>Resume I/O on a replicated device.</summary>
+	<argument>minor</argument>
+</command>

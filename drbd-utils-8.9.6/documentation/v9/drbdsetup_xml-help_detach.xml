@@ -1,0 +1,7 @@
+<command name="detach">
+	<summary>Detach the lower-level device of a replicated device.</summary>
+	<argument>minor</argument>
+	<option name="force" type="boolean">
+		<default>no</default>
+	</option>
+</command>

@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<term><command moreinfo="none">drbdsetup</command><arg choice="plain" rep="norepeat">new-resource</arg><arg choice="plain" rep="norepeat"><replaceable>resource</replaceable></arg><arg choice="plain" rep="norepeat"><replaceable>node_id</replaceable></arg></term>

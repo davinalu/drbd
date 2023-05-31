@@ -1,0 +1,3 @@
+./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc
+make tools 
+make install <--- option

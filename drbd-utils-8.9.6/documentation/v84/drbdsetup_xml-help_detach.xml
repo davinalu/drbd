@@ -1,0 +1,6 @@
+<command name="detach">
+	<argument>minor</argument>
+	<option name="force" type="boolean">
+		<default>no</default>
+	</option>
+</command>

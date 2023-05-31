@@ -1,0 +1,29 @@
+<command name="resize">
+	<summary>Reexamine the lower-level device sizes to resize a replicated device.</summary>
+	<argument>minor</argument>
+	<option name="size" type="numeric">
+		<min>0</min>
+		<max>2199023255552</max>
+		<default>0</default>
+		<unit_prefix>s</unit_prefix>
+		<unit>bytes</unit>
+	</option>
+	<option name="assume-peer-has-space" type="boolean">
+		<default>no</default>
+	</option>
+	<option name="assume-clean" type="boolean">
+		<default>no</default>
+	</option>
+	<option name="al-stripes" type="numeric">
+		<min>1</min>
+		<max>1024</max>
+		<default>1</default>
+		<unit_prefix>1</unit_prefix>
+	</option>
+	<option name="al-stripe-size-kB" type="numeric">
+		<min>4</min>
+		<max>16777216</max>
+		<default>32</default>
+		<unit_prefix>k</unit_prefix>
+	</option>
+</command>

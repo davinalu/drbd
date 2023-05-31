@@ -1,0 +1,6 @@
+<command name="new-current-uuid">
+	<argument>minor</argument>
+	<option name="clear-bitmap" type="boolean">
+		<default>no</default>
+	</option>
+</command>

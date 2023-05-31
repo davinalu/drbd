@@ -1,0 +1,11 @@
+<command name="connect">
+	<summary>Attempt to (re)establish a replication link to a peer host.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<option name="tentative" type="boolean">
+		<default>no</default>
+	</option>
+	<option name="discard-my-data" type="boolean">
+		<default>no</default>
+	</option>
+</command>

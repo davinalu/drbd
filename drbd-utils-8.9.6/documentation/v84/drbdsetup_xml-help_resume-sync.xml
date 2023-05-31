@@ -1,0 +1,3 @@
+<command name="resume-sync">
+	<argument>minor</argument>
+</command>

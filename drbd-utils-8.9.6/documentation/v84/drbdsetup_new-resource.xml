@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<cmdsynopsis sepchar=" "><command moreinfo="none">drbdsetup</command><arg choice="plain" rep="norepeat">new-resource</arg><arg choice="plain" rep="norepeat"><replaceable>resource</replaceable></arg><arg choice="opt" rep="norepeat">--cpu-mask <arg choice="req" rep="norepeat"><replaceable>val</replaceable></arg></arg><arg choice="opt" rep="norepeat">--on-no-data-accessible<group choice="req" rep="norepeat"><arg choice="plain" rep="norepeat">io-error</arg><arg choice="plain" rep="norepeat">suspend-io</arg></group></arg></cmdsynopsis>

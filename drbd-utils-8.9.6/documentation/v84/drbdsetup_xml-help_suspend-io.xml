@@ -1,0 +1,3 @@
+<command name="suspend-io">
+	<argument>minor</argument>
+</command>

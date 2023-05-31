@@ -1,0 +1,3 @@
+<command name="pause-sync">
+	<argument>minor</argument>
+</command>

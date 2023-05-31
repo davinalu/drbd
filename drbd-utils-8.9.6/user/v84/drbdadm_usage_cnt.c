@@ -681,6 +681,7 @@ static char* run_admm_generic(struct cfg_ctx *ctx, const char *arg_override)
 		/* local modification in child,
 		 * no propagation to parent */
 		ctx->arg = arg_override;
+		fprintf(stderr,"lytest %s child do %s\n", __func__,arg_override);
 		rr = _admm_generic(ctx,
 				   SLEEPS_VERY_LONG|
 				   DONT_REPORT_FAILED);

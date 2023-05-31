@@ -1,0 +1,7 @@
+<command name="disconnect">
+	<argument>local_addr</argument>
+	<argument>remote_addr</argument>
+	<option name="force" type="boolean">
+		<default>no</default>
+	</option>
+</command>

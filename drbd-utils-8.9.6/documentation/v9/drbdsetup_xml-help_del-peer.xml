@@ -1,0 +1,8 @@
+<command name="del-peer">
+	<summary>Remove a connection to a peer host.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<option name="force" type="boolean">
+		<default>no</default>
+	</option>
+</command>

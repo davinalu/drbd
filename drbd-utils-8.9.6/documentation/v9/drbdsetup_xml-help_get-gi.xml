@@ -1,0 +1,6 @@
+<command name="get-gi">
+	<summary>Show the data generation identifiers for a device on a particular connection.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<argument>volume</argument>
+</command>

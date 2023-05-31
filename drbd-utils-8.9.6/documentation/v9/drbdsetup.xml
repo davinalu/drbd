@@ -1,0 +1,1999 @@
+<?xml version="1.0"?>
+<refentry id="re-drbdsetup">
+  
+
+
+  <refentryinfo>
+    <date>3 December 2011</date>
+
+    <productname class="trade">DRBD</productname>
+
+    <productnumber>9.0.0</productnumber>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>drbdsetup</refentrytitle>
+
+    <manvolnum>8</manvolnum>
+
+    <refmiscinfo class="manual">System Administration</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>drbdsetup</refname>
+
+    <refpurpose>Configure the DRBD kernel module<indexterm significance="normal">
+        <primary>drbdsetup</primary>
+      </indexterm></refpurpose>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis sepchar=" ">
+      <command moreinfo="none">drbdsetup</command>
+      <arg choice="plain" rep="norepeat">command</arg>
+      <arg choice="req" rep="repeat">argument</arg>
+      <arg choice="opt" rep="repeat">option</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <para>The <command moreinfo="none">drbdsetup</command> utility serves to
+      configure the DRBD kernel module and to show its current configuration.
+      Users usually interact with the <command moreinfo="none">drbdadm</command> utility, which provides a more
+      high-level interface to DRBD than <command moreinfo="none">drbdsetup</command>.  (See <option>drbdadm</option>'s
+      <option>--dry-run</option> option to see how <option>drbdadm</option>
+      uses <option>drbdsetup</option>.)</para>
+
+    <para>Some option arguments have a default scale which applies when a plain
+    number is specified (for example Kilo, or 1024 times the numeric value).
+    Such default scales can be overridden by using a suffix (for example, M
+    for Mega). The common suffixes K = 2^10 = 1024, M = 1024 K, and G = 1024
+    M are supported.</para>
+  </refsect1>
+
+  <refsect1>
+    <title>Commands</title>
+
+    <variablelist>
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_attach.xml"/>
+	<!-- Attach a lower-level device to an existing replicated device. -->
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_disk-options.xml"/>
+	<!-- Change the disk options of an attached lower-level device. -->
+
+        <listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>disk</secondary>
+	  </indexterm>
+
+	  <para>The <option>attach</option> command attaches a lower-level
+	    device to an existing replicated device.  The
+	    <option>disk-options</option> command changes the disk options of
+	    an attached lower-level device.  In either case, the replicated
+	    device must have been created with <command moreinfo="none">drbdsetup new-minor</command>.</para>
+
+	    <para>Both commands refer to the replicated device by its
+	    <replaceable>minor</replaceable> number.
+	    <replaceable>lower_dev</replaceable> is the name of the lower-level
+	    device.  <replaceable>meta_data_dev</replaceable> is the name of
+	    the device containing the metadata, and may be the same as
+	    <replaceable>lower_dev</replaceable>.
+	    <replaceable>meta_data_index</replaceable> is either a numeric
+	    metadata index, or the keyword <option>internal</option> for
+	    internal metadata, or the keyword <option>flexible</option> for
+	    variable-size external metadata. Available
+	    options:</para>
+
+
+	  <variablelist>
+	    <varlistentry><term xml:id="al-extents"><option>--al-extents <replaceable>extents</replaceable></option>
+    </term><listitem><para> DRBD automatically maintains a "hot" or "active" disk area
+      likely to be written to again soon based on the recent write activity.
+      The "active" disk area can be written to immediately, while "inactive"
+      disk areas must be "activated" first, which requires a meta-data write.
+      We also refer to this active disk area as the "activity log".</para><para>The activity log saves meta-data writes, but the whole log must be
+      resynced upon recovery of a failed node.  The size of the activity log is
+      a major factor of how long a resync will take and how fast a replicated
+      disk will become consistent after a crash.</para><para>The activity log consists of a number of 4-Megabyte segments; the
+      <replaceable>al-extents</replaceable> parameter determines how many of
+      those segments can be active at the same time.  The default value for
+      <replaceable>al-extents</replaceable> is 1237, with a minimum of 7 and a
+      maximum of 65536.</para><para>
+	Note that the effective maximum may be smaller, depending on how
+	you created the device meta data, see also
+	<citerefentry><refentrytitle>drbdmeta</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+	The effective maximum is 919 * (available on-disk activity-log ring-buffer area/4kB -1),
+	the default 32kB ring-buffer effects a maximum of 6433 (covers more than 25 GiB of data)
+	We recommend to keep this well within the amount your backend storage
+	and replication link are able to resync inside of about 5 minutes.
+      </para></listitem></varlistentry>
+	    <varlistentry><term xml:id="al-updates"><option>--al-updates
+	<group choice="req" rep="norepeat">
+	  <arg choice="plain" rep="norepeat">yes</arg>
+	  <arg choice="plain" rep="norepeat">no</arg>
+        </group>
+      </option>
+    </term><listitem><para> With this parameter, the activity log can be turned off
+      entirely (see the <option>al-extents</option> parameter). This will speed
+      up writes because fewer meta-data writes will be necessary, but the
+      entire device needs to be resynchronized opon recovery of a failed
+      primary node.  The default value for <option>al-updates</option> is
+      <option>yes</option>.
+      </para></listitem></varlistentry>
+	    <varlistentry><term xml:id="disk-barrier"><option>--disk-barrier</option></term><term xml:id="disk-flushes"><option>--disk-flushes</option></term><term xml:id="disk-drain"><option>--disk-drain</option></term><listitem><para>DRBD has three methods of handling the ordering of dependent write
+      requests:
+	<variablelist>
+	  <varlistentry>
+	    <term><option>disk-barrier</option></term>
+	    <listitem>
+	      <para>Use disk barriers to make sure that requests are written to
+	      disk in the right order. Barriers ensure that all requests
+	      submitted before a barrier make it to the disk before any
+	      requests submitted after the barrier.  This is implemented using
+	      'tagged command queuing' on SCSI devices and 'native command
+	      queuing' on SATA devices. Only some devices and device stacks
+	      support this method. The device mapper (LVM) only supports
+	      barriers in some configurations.</para>
+
+	      <para>Note that on systems which do not support
+	      disk barriers, enabling this option can lead to data loss or
+	      corruption. Until DRBD 8.4.1, <option>disk-barrier</option> was
+	      turned on if the I/O stack below DRBD did support barriers.
+	      Kernels since linux-2.6.36 (or 2.6.32 RHEL6) no longer allow to
+	      detect if barriers are supported. Since drbd-8.4.2,
+	      this option is off by default and needs to be enabled explicitly.
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>disk-flushes</option></term>
+	    <listitem>
+	      <para>Use disk flushes between dependent write requests, also
+	      referred to as 'force unit access' by drive vendors. This forces
+	      all data to disk. This option is enabled by default.
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term><option>disk-drain</option></term>
+	    <listitem>
+	      <para>Wait for the request queue to "drain" (that is, wait for
+	      the requests to finish) before submitting a dependent write
+	      request. This method requires that requests are stable on disk
+	      when they finish. Before DRBD 8.0.9, this was the only method
+	      implemented. This option is enabled by default. Do not disable
+	      in production environments.
+	    </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+	From these three methods, drbd will use the first that is enabled and
+	supported by the backing storage device.  If all three of these options
+	are turned off, DRBD will submit write requests without bothering about
+	dependencies. Depending on the I/O stack, write requests can be
+	reordered, and they can be submitted in a different order on different
+	cluster nodes. This can result in data loss or corruption. Therefore,
+	turning off all three methods of controlling write ordering is strongly
+	discouraged.
+      </para><para>A general guideline for configuring write ordering is to use disk
+      barriers or disk flushes when using ordinary disks (or an ordinary disk
+      array) with a volatile write cache. On storage without cache or with a
+      battery backed write cache, disk draining can be a reasonable
+      choice.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="disk-timeout"> <option>--disk-timeout</option>
+    </term><listitem><para>If the lower-level device on which a DRBD device stores its data does
+      not finish an I/O request within the defined
+      <option>disk-timeout</option>, DRBD treats this as a failure. The
+      lower-level device is detached, and the device's disk state advances to
+      Diskless.  If DRBD is connected to one or more peers, the failed request
+      is passed on to one of them.</para><para>This option is <emphasis>dangerous and may lead to kernel panic!</emphasis></para><para>"Aborting" requests, or force-detaching the disk, is intended for
+      completely blocked/hung local backing devices which do no longer
+      complete requests at all, not even do error completions.  In this
+      situation, usually a hard-reset and failover is the only way out.</para><para>By "aborting", basically faking a local error-completion,
+      we allow for a more graceful swichover by cleanly migrating services.
+      Still the affected node has to be rebooted "soon".</para><para>By completing these requests, we allow the upper layers to re-use
+      the associated data pages.</para><para>If later the local backing device "recovers", and now DMAs some data
+      from disk into the original request pages, in the best case it will
+      just put random data into unused pages; but typically it will corrupt
+      meanwhile completely unrelated data, causing all sorts of damage.</para><para>Which means delayed successful completion,
+      especially for READ requests, is a reason to panic().
+      We assume that a delayed *error* completion is OK,
+      though we still will complain noisily about it.</para><para>The default value of
+      <option>disk-timeout</option> is 0, which stands for an infinite timeout.
+      Timeouts are specified in units of 0.1 seconds. This option is available
+      since DRBD 8.3.12.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="md-flushes"><option>--md-flushes</option></term><listitem><para>Enable disk flushes and disk barriers on the meta-data device.
+      This option is enabled by default.  See the <option>disk-flushes</option>
+      parameter.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="on-io-error"><option>--on-io-error <replaceable>handler</replaceable></option></term><listitem><para> Configure how DRBD reacts to I/O errors on a
+	lower-level device. The following policies are defined:
+
+	<variablelist>
+	  <varlistentry>
+	    <term xml:id="pass_on"><option>pass_on</option></term>
+	    <listitem>
+	      <para>Change the disk status to Inconsistent, mark the failed
+	      block as inconsistent in the bitmap, and retry the I/O operation
+	      on a remote cluster node.</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term xml:id="call-local-io-error"><option>call-local-io-error</option></term>
+	    <listitem>
+	      <para>Call the <option>local-io-error</option> handler (see the
+	      <option>handlers</option> section).</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term xml:id="detach"><option>detach</option></term>
+	    <listitem>
+	      <para>Detach the lower-level device and continue in diskless mode.
+	      </para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para></listitem></varlistentry>
+	    <varlistentry><term xml:id="read-balancing"><option>--read-balancing <replaceable>policy</replaceable></option>
+    </term><listitem><para>
+	Distribute read requests among cluster nodes as defined by
+	<replaceable>policy</replaceable>. The supported policies are
+	<option xml:id="prefer-local">prefer-local</option> (the default),
+	<option xml:id="prefer-remote">prefer-remote</option>, <option xml:id="round-robin">round-robin</option>,
+	<option xml:id="least-pending">least-pending</option>, <option xml:id="when-congested-remote">when-congested-remote</option>,
+	<option xml:id="_32K-striping">32K-striping</option>, <option xml:id="_64K-striping">64K-striping</option>,
+	<option xml:id="_128K-striping">128K-striping</option>, <option xml:id="_256K-striping">256K-striping</option>,
+	<option xml:id="_512K-striping">512K-striping</option> and <option xml:id="_1M-striping">1M-striping</option>.</para><para>This option is available since DRBD 8.4.1.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="resync-after">
+	
+	  <option>resync-after <replaceable>minor</replaceable></option>
+	
+	
+      </term><listitem><para> Define that a device should only resynchronize after the
+	specified other device. By default, no order between devices is
+	defined, and all devices will resynchronize in parallel. Depending on
+	the configuration of the lower-level devices, and the available
+	network and disk bandwidth, this can slow down the overall resync
+	process.  This option can be used to form a chain or tree of
+	dependencies among devices.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="size"><option>--size <replaceable>size</replaceable></option></term><listitem><para>Specify the size of the lower-level device explicitly instead of
+	determining it automatically.  The device size must be determined once
+	and is remembered for the lifetime of the device.  In order to
+	determine it automatically, all the lower-level devices on all nodes
+	must be attached, and all nodes must be connected.  If the size is
+	specified explicitly, this is not necessary.  The <option>size</option>
+	value is assumed to be in units of sectors (512 bytes) by
+	default.</para></listitem></varlistentry> <!-- only for attach, not for disk-options? -->
+	    <varlistentry><term xml:id="discard-zeroes-if-aligned"><option>--discard-zeroes-if-aligned <group choice="req" rep="norepeat">
+    <arg choice="plain" rep="norepeat">yes</arg>
+    <arg choice="plain" rep="norepeat">no</arg>
+    </group></option></term><listitem><para>
+        
+	There are several aspects to discard/trim/unmap support on linux
+	block devices.  Even if discard is supported in general, it may fail
+	silently, or may partially ignore discard requests.  Devices also
+	announce whether reading from unmapped blocks returns defined data
+	(usually zeroes), or undefined data (possibly old data, possibly
+	garbage).
+	</para><para>
+	If on different nodes, DRBD is backed by devices with differing discard
+	characteristics, discards may lead to data divergence (old data or
+	garbage left over on one backend, zeroes due to unmapped areas on the
+	other backend). Online verify would now potentially report tons of
+	spurious differences.  While probably harmless for most use cases
+	(fstrim on a file system), DRBD cannot have that.
+	</para><para>
+	To play safe, we have to disable discard support, if our local backend
+	(on a Primary) does not support "discard_zeroes_data=true".  We also have to
+	translate discards to explicit zero-out on the receiving side, unless
+	the receiving side (Secondary) supports "discard_zeroes_data=true",
+	thereby allocating areas what were supposed to be unmapped.
+	</para><para>
+	There are some devices (notably the LVM/DM thin provisioning) that are
+	capable of discard, but announce discard_zeroes_data=false.  In the case of
+	DM-thin, discards aligned to the chunk size will be unmapped, and
+	reading from unmapped sectors will return zeroes. However, unaligned
+	partial head or tail areas of discard requests will be silently ignored.
+	</para><para>
+	If we now add a helper to explicitly zero-out these unaligned partial
+	areas, while passing on the discard of the aligned full chunks, we
+	effectively achieve discard_zeroes_data=true on such devices.
+	</para><para>
+	Setting <option>discard-zeroes-if-aligned</option> to <option>yes</option>
+	will allow DRBD to use discards, and to announce discard_zeroes_data=true,
+	even on backends that announce discard_zeroes_data=false.
+	</para><para>
+	Setting <option>discard-zeroes-if-aligned</option> to <option>no</option>
+	will cause DRBD to always fall-back to zero-out on the receiving side,
+	and to not even announce discard capabilities on the Primary,
+	if the respective backend announces discard_zeroes_data=false.
+	</para><para>
+	We used to ignore the discard_zeroes_data setting completely.  To not
+	break established and expected behaviour, and suddenly cause fstrim on
+	thin-provisioned LVs to run out-of-space instead of freeing up space,
+	the default value is <option>yes</option>.
+	</para><para>
+	This option is available since 8.4.7.
+      </para></listitem></varlistentry>
+	    <varlistentry><term>
+      <option>--rs-discard-granularity <replaceable>byte</replaceable></option>
+    </term><listitem><para>
+        When <option>rs-discard-granularity</option> is set to a non zero, positive
+        value then DRBD tries to do a resync operation in requests of this size.
+        In case such a block contains only zero bytes on the sync source node,
+        the sync target node will issue a discard/trim/unmap command for
+        the area.</para><para>The value is constrained by the discard granularity of the backing
+	block device. In case <option>rs-discard-granularity</option> is not a
+	multiplier of the discard granularity of the backing block device DRBD
+	rounds it up. The feature only gets active if the backing block device
+	reads back zeroes after a discard command.</para><para> The default value of is 0. This option is available since 8.4.7.
+        </para></listitem></varlistentry>
+          </variablelist>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_peer-device-options.xml"/>
+	<!-- Remember the current size of a lower-level device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>peer-device-options</secondary>
+	  </indexterm>
+
+	  <para>These are options that affect the <replaceable>peer</replaceable>'s device.
+	  </para>
+
+
+	  <variablelist>
+	    <varlistentry><term xml:id="c-delay-target"><option>--c-delay-target <replaceable>delay_target</replaceable></option></term><term xml:id="c-fill-target"><option>--c-fill-target <replaceable>fill_target</replaceable></option></term><term xml:id="c-max-rate"><option>--c-max-rate <replaceable>max_rate</replaceable></option></term><term xml:id="c-plan-ahead"><option>--c-plan-ahead <replaceable>plan_time</replaceable></option></term><listitem><para>Dynamically control the resync speed.  This mechanism is enabled by
+      setting the <option>c-plan-ahead</option> parameter to a positive value.
+      The goal is to either fill the buffers along the data path with a defined
+      amount of data if <option>c-fill-target</option> is defined, or to have a
+      defined delay along the path if <option>c-delay-target</option> is
+      defined. The maximum bandwidth is limited by the
+      <option>c-max-rate</option> parameter.</para><para>The <option>c-plan-ahead</option> parameter defines how fast drbd
+      adapts to changes in the resync speed.  It should be set to five times
+      the network round-trip time or more.  Common values for
+      <option>c-fill-target</option> for "normal" data paths range from 4K to
+      100K. If drbd-proxy is used, it is advised to use
+      <option>c-delay-target</option> instead of <option>c-fill-target</option>. The
+      <option>c-delay-target</option> parameter is used if the
+      <option>c-fill-target</option> parameter is undefined or set to 0.  The
+      <option>c-delay-target</option> parameter should be set to five times the
+      network round-trip time or more. The <option>c-max-rate</option> option
+      should be set to either the bandwidth available between the DRBD-hosts and the
+      machines hosting DRBD-proxy, or to the available disk bandwidth.</para><para>The default values of these parameters are:
+      <option>c-plan-ahead</option> = 20 (in units of 0.1 seconds),
+      <option>c-fill-target</option> = 0 (in units of sectors),
+      <option>c-delay-target</option> = 1 (in units of 0.1 seconds),
+      and <option>c-max-rate</option> = 102400 (in units of KiB/s).</para><para>Dynamic resync speed control is available since DRBD 8.3.9.</para></listitem></varlistentry>
+	    <varlistentry><listitem/></varlistentry>
+	    <varlistentry><listitem/></varlistentry>
+	    <varlistentry><term xml:id="c-min-rate"><option>--c-min-rate <replaceable>min_rate</replaceable></option></term><listitem><para>A node which is primary and sync-source has to schedule application
+      I/O requests and resync I/O requests. The <option>c-min-rate</option>
+      parameter limits how much bandwidth is available for resync I/O; the
+      remaining bandwidth is used for application I/O.</para><para>A <option>c-min-rate</option> value of 0 means that there is no
+      limit on the resync I/O bandwidth. This can slow down application I/O
+      significantly. Use a value of 1 (1 KiB/s) for the lowest possible resync
+      rate.</para><para>The default value of <option>c-min-rate</option> is 4096, in units of
+      KiB/s.</para></listitem></varlistentry>
+	    <varlistentry><listitem/></varlistentry>
+	    <varlistentry><term xml:id="resync-rate"><option>--resync-rate <replaceable>rate</replaceable></option></term><listitem><para> Define how much bandwidth DRBD may use for
+	resynchronizing.  DRBD allows "normal" application I/O even during a
+	resync. If the resync takes up too much bandwidth, application I/O
+	can become very slow. This parameter allows to avoid that. Please
+	note this is option only works when the dynamic resync controller is
+	disabled.</para></listitem></varlistentry>
+	 </variablelist>
+
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_check-resize.xml"/>
+	<!-- Remember the current size of a lower-level device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>check-resize</secondary>
+	  </indexterm>
+
+	  <para>Remember the current size of the lower-level device of the
+	  specified replicated device.  Used by drbdadm.  The size information
+	  is stored in file
+	  /var/lib/drbd/drbd-minor-<replaceable>minor</replaceable>.lkbd.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_new-peer.xml"/>
+	<!-- Create a connection/peer within a resource. -->
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_net-options.xml"/>
+	<!-- Change the network options of a connection. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>net</secondary>
+	  </indexterm>
+
+	  <para>The <option>new-peer</option> command creates a connection within
+          a <replaceable>resource</replaceable>. The resource
+	  must have been created with <command moreinfo="none">drbdsetup
+	  new-resource</command>.  The <option>net-options</option> command
+	  changes the network options of an existing connection. Before a
+	  connection can be activated with the <option>connect</option>
+	  command, at least one path need to added with the <option>new-path</option>
+	  command. Available options:</para>
+
+	  <variablelist>
+
+	    <varlistentry><term xml:id="after-sb-0pri"><option>--after-sb-0pri <replaceable>policy</replaceable></option></term><listitem><para>Define how to react if a split-brain scenario is detected and none
+      of the two nodes is in primary role.  (We detect split-brain scenarios
+      when two nodes connect; split-brain decisions are always between two
+      nodes.) The defined policies are:</para><variablelist>
+	<varlistentry>
+	  <term><option>disconnect</option></term>
+
+	  <listitem>
+	    <para>No automatic resynchronization; simply disconnect.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>discard-younger-primary</option></term>
+	  <term><option>discard-older-primary</option></term>
+
+	  <listitem>
+	    <para>Resynchronize from the node which became primary first
+	      (<option>discard-younger-primary</option>) or last
+	      (<option>discard-older-primary</option>).  If both nodes became
+	      primary independently, the <option>discard-least-changes</option>
+	      policy is used.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>discard-zero-changes</option></term>
+
+	  <listitem>
+	    <para>If only one of the nodes wrote data since the split brain
+	    situation was detected, resynchronize from this node to the other.
+	    If both nodes wrote data, disconnect.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>discard-least-changes</option></term>
+
+	  <listitem>
+	    <para>Resynchronize from the node with more modified blocks.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>discard-node-<replaceable>nodename</replaceable></option></term>
+
+	  <listitem>
+	    <para>Always resynchronize to the named node.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist></listitem></varlistentry>
+	    <varlistentry><term xml:id="after-sb-1pri"><option>--after-sb-1pri <replaceable>policy</replaceable></option></term><listitem><para>Define how to react if a split-brain scenario is detected, with one
+      node in primary role and one node in secondary role.  (We detect
+      split-brain scenarios when two nodes connect, so split-brain decisions
+      are always among two nodes.)  The defined policies are:</para><variablelist>
+	<varlistentry>
+	  <term><option>disconnect</option></term>
+
+	  <listitem>
+	    <para>No automatic resynchronization, simply disconnect.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>consensus</option></term>
+
+	  <listitem>
+	    <para>Discard the data on the secondary node if the
+	    <option>after-sb-0pri</option> algorithm would also discard the
+	    data on the secondary node.  Otherwise, disconnect.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>violently-as0p</option></term>
+
+	  <listitem>
+	    <para>Always take the decision of the <option>after-sb-0pri</option> algorithm,
+	      even if it causes an erratic change of the primary's view of the
+	      data. This is only useful if a single-node file system (i.e., not
+	      OCFS2 or GFS) with the <option>allow-two-primaries</option> flag
+	      is used.  This option can cause the primary node to crash, and
+	      should not be used.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term xml:id="discard-secondary"><option>discard-secondary</option></term>
+
+	  <listitem>
+	    <para>Discard the data on the secondary node.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term xml:id="call-pri-lost-after-sb"><option>call-pri-lost-after-sb</option></term>
+
+	  <listitem>
+	    <para>Always take the decision of the
+	    <option>after-sb-0pri</option> algorithm.  If the decision is to
+	    discard the data on the primary node, call the
+	    <option xml:id="pri-lost-after-sb">pri-lost-after-sb</option> handler on the primary
+	    node.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist></listitem></varlistentry>
+	    <varlistentry><term xml:id="after-sb-2pri"><option>--after-sb-2pri <replaceable>policy</replaceable></option></term><listitem><para>Define how to react if a split-brain scenario is detected and both
+      nodes are in primary role.  (We detect split-brain scenarios when two
+      nodes connect, so split-brain decisions are always among two nodes.)  The
+      defined policies are:</para><variablelist>
+	<varlistentry>
+	  <term><option>disconnect</option></term>
+
+	  <listitem>
+	    <para>No automatic resynchronization, simply disconnect.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term xml:id="violently-as0p"><option>violently-as0p</option></term>
+
+	  <listitem>
+	    <para>See the <option>violently-as0p</option> policy for
+	      <option>after-sb-1pri</option>.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>call-pri-lost-after-sb</option></term>
+
+    <listitem>
+      <para>Call the <option>pri-lost-after-sb</option> helper program on one
+        of the machines unless that machine can demote to secondary. The helper
+        program is expected to reboot the machine, which brings the node into
+        a secondary role. Which machine runs the helper program is determined
+        by the <option>after-sb-0pri</option> strategy.</para>
+    </listitem>
+  </varlistentry>
+      </variablelist></listitem></varlistentry>
+	    <varlistentry><term xml:id="allow-two-primaries"><option>--allow-two-primaries</option></term><listitem><para> The most common way to configure DRBD devices is to allow
+	only one node to be primary (and thus writable) at a time.</para><para>In some scenarios it is preferable to allow two nodes to be
+	primary at once; a mechanism outside of DRBD then must make sure that
+	writes to the shared, replicated device happen in a coordinated way.
+	This can be done with a shared-storage cluster file system like OCFS2
+	and GFS, or with virtual machine images and a virtual machine manager
+	that can migrate virtual machines between physical machines.</para><para>The <option>allow-two-primaries</option> parameter tells DRBD to
+	allow two nodes to be primary at the same time. Never enable this
+	option when using a non-distributed file system; otherwise, data
+	corruption and node crashes will result!</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="always-asbp"><option>--always-asbp</option></term><listitem><para>Normally the automatic after-split-brain policies are only used if current
+      states of the UUIDs do not indicate the presence of a third node.</para><para>With this option you request that the automatic after-split-brain policies are
+      used as long as the data sets of the nodes are somehow related. This might cause a
+      full sync, if the UUIDs indicate the presence of a third node. (Or double faults led
+      to strange UUID sets.)</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="connect-int"><option>--connect-int <replaceable>time</replaceable></option></term><listitem><para> As soon as a connection between two nodes is configured
+	with <command moreinfo="none">drbdsetup connect</command>, DRBD
+	immediately tries to establish the connection. If this fails, DRBD
+	waits for <option>connect-int</option> seconds and then repeats.  The
+	default value of <option>connect-int</option> is 10 seconds.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="cram-hmac-alg"><option>--cram-hmac-alg <replaceable>hash-algorithm</replaceable></option></term><listitem><para> Configure the hash-based message authentication code
+	(HMAC) or secure hash algorithm to use for peer authentication. The
+	kernel supports a number of different algorithms, some of which may be
+	loadable as kernel modules. See the shash algorithms listed in
+	/proc/crypto.  By default, <option>cram-hmac-alg</option> is unset.
+	Peer authentication also requires a <option>shared-secret</option> to
+	be configured.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="csum-alg"><option>--csums-alg <replaceable>hash-algorithm</replaceable></option></term><listitem><para> Normally, when two nodes resynchronize, the sync target
+	requests a piece of out-of-sync data from the sync source, and the sync
+	source sends the data.  With many usage patterns, a significant number of those blocks
+	will actually be identical.</para><para>When a <option>csums-alg</option> algorithm is specified, when
+	requesting a piece of out-of-sync data, the sync target also sends
+	along a hash of the data it currently has. The sync source compares
+	this hash with its own version of the data.  It sends the sync target
+	the new data if the hashes differ, and tells it that the data are the
+	same otherwise. This reduces the network bandwidth required, at the
+	cost of higher cpu utilization and possibly increased I/O on the sync
+	target.</para><para>The <option>csums-alg</option> can be set to one of the secure
+	hash algorithms supported by the kernel; see the shash algorithms
+	listed in /proc/crypto.  By default, <option>csums-alg</option> is
+	unset.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="csums-after-crash-only"><option>--csums-after-crash-only</option></term><listitem><para> Enabling this option (and csums-alg, above) makes it possible to
+        use the checksum based resync only for the first resync after primary crash,
+      but not for later "network hickups".</para><para>In most cases, block that are marked as need-to-be-resynced are in fact changed,
+      so calculating checksums, and both reading and writing the blocks on the resync target
+      is all effective overhead.</para><para>The advantage of checksum based resync is mostly after primary crash recovery,
+      where the recovery marked larger areas (those covered by the activity log)
+      as need-to-be-resynced, just in case. Introduced in 8.4.5.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="data-integrity-alg"><option>--data-integrity-alg </option> <replaceable>alg</replaceable></term><listitem><para>DRBD normally relies on the data integrity checks built into the
+      TCP/IP protocol, but if a data integrity algorithm is configured, it will
+      additionally use this algorithm to make sure that the data received over
+      the network match what the sender has sent.  If a data integrity error is
+      detected, DRBD will close the network connection and reconnect, which
+      will trigger a resync.</para><para>The <option>data-integrity-alg</option> can be set to one of the
+      secure hash algorithms supported by the kernel; see the shash algorithms
+      listed in /proc/crypto. By default, this mechanism is turned off.</para><para>Because of the CPU overhead involved, we recommend not to use this
+	option in production environments.  Also see the notes on data
+	integrity below.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="fencing"><option>--fencing <replaceable>fencing_policy</replaceable></option></term><listitem><para> <option>Fencing</option> is a preventive measure to avoid
+      situations where both nodes are primary and disconnected. This is also
+      known as a split-brain situation. DRBD supports the following fencing
+      policies:</para><variablelist>
+	<varlistentry>
+	  <term xml:id="dont-care"><option>dont-care</option></term>
+
+	  <listitem>
+	    <para>No fencing actions are taken. This is the default policy.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term xml:id="resource-only"><option>resource-only</option></term>
+
+	  <listitem>
+	    <para>If a node becomes a disconnected primary, it tries to fence the peer.
+	    This is done by calling the <option>fence-peer</option> handler. The
+	    handler is supposed to reach the peer over an alternative communication path
+	    and call '<option>drbdadm outdate minor</option>' there.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term xml:id="resource-and-stonith"><option>resource-and-stonith</option></term>
+
+	  <listitem>
+	    <para>If a node becomes a disconnected primary, it freezes all its IO operations
+	    and calls its fence-peer handler. The fence-peer handler is supposed to reach
+	    the peer over an alternative communication path and call
+	    '<option>drbdadm outdate minor</option>' there. In case it cannot
+	    do that, it should stonith the peer. IO is resumed as soon as
+	    the situation is resolved. In case the fence-peer  handler fails,
+	    I/O can be resumed manually with '<option>drbdadm
+	    resume-io</option>'.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist></listitem></varlistentry>
+	    <varlistentry><term xml:id="ko-count"><option>--ko-count <replaceable>number</replaceable></option></term><listitem><para> If a secondary node fails to complete a write request in
+      <option>ko-count</option> times the <option>timeout</option> parameter,
+      it is excluded from the cluster. The primary node then sets the
+      connection to this secondary node to Standalone.
+      To disable this feature, you should explicitly set it to 0; defaults may change between versions.
+      </para></listitem></varlistentry>
+	    <varlistentry><term xml:id="max-buffers"><option>--max-buffers <replaceable>number</replaceable></option></term><listitem><para> Limits the memory usage per DRBD minor device on the receiving side,
+	or for internal buffers during resync or online-verify.
+	Unit is PAGE_SIZE, which is 4 KiB on most systems.
+	The minimum possible setting is hard coded to 32 (=128 KiB).
+	These buffers are used to hold data blocks while they are written to/read from disk.
+	To avoid possible distributed deadlocks on congestion, this setting is used
+	as a throttle threshold rather than a hard limit.  Once more than max-buffers
+	pages are in use, further allocation from this pool is throttled.
+	You want to increase max-buffers if you cannot saturate the IO backend on the
+        receiving side.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="max-epoch-size"><option>--max-epoch-size <replaceable>number</replaceable></option></term><listitem><para> Define the maximum number of write requests DRBD may issue
+	before issuing a write barrier.  The default value is 2048, with a
+	minimum of 1 and a maximum of 20000.  Setting this parameter to a value
+	below 10 is likely to decrease performance.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="on-congestion"><option>--on-congestion <replaceable>policy</replaceable></option></term><term xml:id="congestion-fill"><option>--congestion-fill <replaceable>threshold</replaceable></option></term><term xml:id="congestion-extents"><option>--congestion-extents
+    <replaceable>threshold</replaceable></option></term><listitem><para>By default, DRBD blocks when the TCP send queue is full. This prevents
+      applications from generating further write requests until more buffer
+      space becomes available again.</para><para>When DRBD is used together with DRBD-proxy, it can be better to use
+      the <option>pull-ahead</option> <option>on-congestion</option> policy,
+      which can switch DRBD into ahead/behind mode before the send queue is full.
+      DRBD then records the differences between itself and the peer in its
+      bitmap, but it no longer replicates them to the peer.  When enough buffer
+      space becomes available again, the node resynchronizes with the peer and
+      switches back to normal replication.</para><para>This has the advantage of not blocking application I/O even when the
+      queues fill up, and the disadvantage that peer nodes can fall behind much
+      further.  Also, while resynchronizing, peer nodes will become
+      inconsistent.</para><para>The available congestion policies are <option>block</option> (the
+      default) and <option>pull-ahead</option>.  The
+      <option>congestion-fill</option> parameter defines how much data is
+      allowed to be "in flight" in this connection.  The default value is 0,
+      which disables this mechanism of congestion control, with a maximum of
+      10 GiBytes.  The <option>congestion-extents</option> parameter defines
+      how many bitmap extents may be active before switching into ahead/behind
+      mode, with the same default and limits as the <option>al-extents</option>
+      parameter.  The <option>congestion-extents</option> parameter is
+      effective only when set to a value smaller than
+      <option>al-extents</option>.</para><para>Ahead/behind mode is available since DRBD 8.3.10.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="ping-int"><option>--ping-int <replaceable>interval</replaceable></option></term><listitem><para> When the TCP/IP connection to a peer is idle for more than
+	<option>ping-int</option> seconds, DRBD will send a keep-alive packet
+	to make sure that a failed peer or network connection is detected
+	reasonably soon.  The default value is 10 seconds, with a minimum of 1
+	and a maximum of 120 seconds. The unit is seconds.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="ping-timeout"><option>--ping-timeout <replaceable>timeout</replaceable></option></term><listitem><para> Define the timeout for replies to keep-alive packets.  If
+	the peer does not reply within <option>ping-timeout</option>, DRBD will
+	close and try to reestablish the connection.  The default value is 0.5
+	seconds, with a minimum of 0.1 seconds and a maximum of 3 seconds.  The
+	unit is tenths of a second.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="socket-check-timeout"><option>--socket-check-timeout <replaceable>timeout</replaceable></option></term><listitem><para>In setups involving a DRBD-proxy and connections that experience a lot of
+        buffer-bloat it might be necessary to set <option>ping-timeout</option> to an
+        unusual high value. By default DRBD uses the same value to wait if a newly
+        established TCP-connection is stable. Since the DRBD-proxy is usually located
+        in the same data center such a long wait time may hinder DRBD's connect process.</para><para>In such setups <option>socket-check-timeout</option> should be set to
+	at least to the round trip time between DRBD and DRBD-proxy. I.e. in most
+	cases to 1.</para><para>The default unit is tenths of a second, the default value is 0 (which causes
+        DRBD to use the value of <option>ping-timeout</option> instead).
+	Introduced in 8.4.5.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="protocol"><option>--protocol <replaceable>name</replaceable></option></term><listitem><para>Use the specified protocol on this connection.  The supported
+      protocols are:
+        <variablelist>
+	  <varlistentry>
+	    <term xml:id="A"><option>A</option></term>
+
+	    <listitem>
+	      <para>Writes to the DRBD device complete as soon as they have
+	      reached the local disk and the TCP/IP send buffer.</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term xml:id="B"><option>B</option></term>
+
+	    <listitem>
+	      <para>Writes to the DRBD device complete as soon as they have
+	      reached the local disk, and all peers have acknowledged the
+	      receipt of the write requests.</para>
+	    </listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term xml:id="C"><option>C</option></term>
+
+	    <listitem>
+	      <para>Writes to the DRBD device complete as soon as they have
+	      reached the local and all remote disks.</para>
+	    </listitem>
+	  </varlistentry>
+	</variablelist>
+      </para></listitem></varlistentry>
+	    <varlistentry><term xml:id="rcvbuf-size"><option>--rcvbuf-size <replaceable>size</replaceable></option></term><listitem><para> Configure the size of the TCP/IP receive buffer.  A value
+	of 0 (the default) causes the buffer size to adjust dynamically.
+	This parameter usually does not need to be set, but it can be set
+	to a value up to 10 MiB.  The default unit is bytes.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="rr-conflict"><option>--rr-conflict</option> <replaceable>policy</replaceable></term><listitem><para>This option helps to solve the cases when the outcome of the resync decision is
+      incompatible with the current role assignment in the cluster.  The
+      defined policies are:</para><variablelist>
+	<varlistentry>
+	  <term xml:id="disconnect"><option>disconnect</option></term>
+
+	  <listitem>
+	    <para>No automatic resynchronization, simply disconnect.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term xml:id="violently"><option>violently</option></term>
+
+	  <listitem>
+	    <para>Resync to the primary node is allowed, violating the assumption that data on
+	    a block device are stable for one of the nodes. <emphasis>Do not
+	    use this option, it is dangerous.</emphasis></para> <!-- What would happen? -->
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term xml:id="call-pri-lost"><option>call-pri-lost</option></term>
+
+	  <listitem>
+	    <para>Call the <option>pri-lost</option> handler on one of the machines. The handler is
+	      expected to reboot the machine, which puts it into secondary role.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist></listitem></varlistentry>
+	    <varlistentry><term xml:id="shared-secret"><option>--shared-secret <replaceable>secret</replaceable></option></term><listitem><para> Configure the shared secret used for peer authentication.
+	The secret is a string of up to 64 characters. Peer authentication also
+	requires the <option>cram-hmac-alg</option> parameter to be set.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="sndbuf-size"><option>--sndbuf-size <replaceable>size</replaceable></option></term><listitem><para> Configure the size of the TCP/IP send buffer.  Since DRBD
+      8.0.13 / 8.2.7, a value of 0 (the default) causes the buffer size to
+      adjust dynamically.  Values below 32 KiB are harmful to the throughput
+      on this connection.  Large buffer sizes can be useful especially when
+      protocol A is used over high-latency networks; the maximum value
+      supported is 10 MiB.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="tcp-cork"><option>--tcp-cork</option></term><listitem><para>By default, DRBD uses the TCP_CORK socket option to prevent the
+      kernel from sending partial messages; this results in fewer and bigger
+      packets on the network.  Some network stacks can perform worse with this
+      optimization.  On these, the <option>tcp-cork</option> parameter can be
+      used to turn this optimization off.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="timeout"><option>--timeout <replaceable>time</replaceable></option></term><listitem><para> Define the timeout for replies over the network: if a peer
+      node does not send an expected reply within the specified <option>timeout</option>,
+      it is considered dead and the TCP/IP connection is closed.  The timeout
+      value must be lower than <option>connect-int</option> and lower than
+      <option>ping-int</option>.  The default is 6 seconds; the value is
+      specified in tenths of a second.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="unplug-watermark"><option>--unplug-watermark <replaceable>number</replaceable></option></term><listitem><para>Mainline kernels before version 2.6.39-rc1 use an explicit
+      plug / unplug mechanism to control when a block device starts processing
+      queued requests.  On those kernels, the <option>unplug-watermark</option>
+      parameter defines how many requests must be queued until a secondary
+      node starts processing them.  Some storage controllers perform best when
+      <option>unplug-watermark</option> is set to the same value as
+      <option>max-buffers</option>; others are more efficient with smaller
+      values. The default value for <option>unplug-watermark</option> is 128,
+      with a minimum of 16 and a maximum of 131072.</para><para>More recent kernels handle plugging and unplugging implicitly; on
+      those kernels, this parameter has no effect. Note that some distributions
+      have backported this feature to older kernel versions.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="use-rle"><option>--use-rle</option></term><listitem><para> Each replicated device on a cluster node has a separate
+	bitmap for each of its peer devices.  The bitmaps are used for tracking
+	the differences between the local and peer device: depending on the
+	cluster state, a disk range can be marked as different from the peer in
+	the device's bitmap, in the peer device's bitmap, or in both bitmaps.
+	When two cluster nodes connect, they exchange each other's bitmaps, and
+	they each compute the union of the local and peer bitmap to determine
+	the overall differences.</para><para>Bitmaps of very large devices are also relatively large, but they
+	usually compress very well using run-length encoding.  This can save
+	time and bandwidth for the bitmap transfers.</para><para>The <option>use-rle</option> parameter determines if run-length
+	encoding should be used.  It is on by default since DRBD 8.4.0.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="verify-alg"><option>--verify-alg <replaceable>hash-algorithm</replaceable></option></term><listitem><para>Online verification (<command moreinfo="none">drbdadm
+	  verify</command>) computes and compares checksums of disk blocks
+	(i.e., hash values) in order to detect if they differ.  The
+	<option>verify-alg</option> parameter determines which algorithm to use
+	for these checksums. It must be set to one of the secure hash algorithms
+	supported by the kernel before online verify can be used; see the shash
+	algorithms listed in /proc/crypto.</para><para>We recommend to schedule online verifications regularly during
+	low-load periods, for example once a month.  Also see the notes on data
+	integrity below.</para></listitem></varlistentry>
+	  </variablelist>
+	</listitem>
+      </varlistentry>
+
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_new-path.xml"/>
+	<!-- Create a path to a peer (within a connection). -->
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>net</secondary>
+	  </indexterm>
+
+	  <para>The <option>new-path</option> command creates a path within
+          a <replaceable>connection</replaceable>. The connection
+	  must have been created with <command moreinfo="none">drbdsetup
+	  new-peer</command>. <replaceable>Local_addr</replaceable> and
+	  <replaceable>remote_addr</replaceable> refer to the local and remote
+	  protocol, network address, and port in the format
+	  <optional><replaceable>address-family</replaceable>:</optional><replaceable>address</replaceable><optional>:<replaceable>port</replaceable></optional>.
+	  The address families <option>ipv4</option>,
+	  <option>ipv6</option>, <option>ssocks</option> (Dolphin Interconnect
+	  Solutions' "super sockets"), <option>sdp</option> (Infiniband Sockets
+	  Direct Protocol), and <option>sci</option> are supported
+	  (<option>sci</option> is an alias for <option>ssocks</option>).  If
+	  no address family is specified, <option>ipv4</option> is assumed. For
+	  all address families except <option>ipv6</option>, the
+	  <replaceable>address</replaceable> uses IPv4 address notation (for
+	  example, 1.2.3.4). For <option>ipv6</option>, the address is enclosed
+	  in brackets and uses IPv6 address notation (for example,
+	  [fd01:2345:6789:abcd::1]).  The <replaceable>port</replaceable>
+	  defaults to 7788.</para>
+
+	</listitem>
+      </varlistentry>
+
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_connect.xml"/>
+	<!-- Activate a connection. -->
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>net</secondary>
+	  </indexterm>
+
+	  <para>The <option>connect</option> command activates a connection.
+	  That means that the DRBD driver will bind and listen on all local
+	  addresses of the connection-'s paths. It will begin to try to establish
+	  one or more paths of the connection.  Available options: </para>
+
+	  <variablelist>
+	    <varlistentry><term xml:id="tentative"><option>--tentative</option></term><listitem><para>Only determine if a connection to the peer can be established and
+	if a resync is necessary (and in which direction) without actually
+	establishing the connection or starting the resync.  Check the system
+	log to see what DRBD would do without the <option>--tentative</option>
+	option.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="discard-my-data"><option>--discard-my-data</option></term><listitem><para>Discard the local data and resynchronize with the peer that has the
+	most up-to-data data.  Use this option to manually recover from a
+	split-brain situation.</para></listitem></varlistentry>
+	  </variablelist>
+
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_del-peer.xml"/>
+	<!-- Remove a connection/peer within a resource. -->
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>net</secondary>
+	  </indexterm>
+
+	  <para>The <option>del-peer</option> command removes a connection from
+          a <replaceable>resource</replaceable>.</para>
+
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_del-path.xml"/>
+	<!-- Remove a connection/peer within a resource. -->
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>net</secondary>
+	  </indexterm>
+
+	  <para>The <option>del-path</option> command removes a path from
+          a <replaceable>connection</replaceable>. Please not that it fails if
+	  the path is necessary to keep a connected connection in tact. In order
+	  to remove all paths, disconnect the connection first.</para>
+
+	</listitem>
+      </varlistentry>
+
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_cstate.xml"/>
+	<!-- Show the current state of a connection. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>cstate</secondary>
+	  </indexterm>
+
+	  <para>Show the current state of a connection.  The connection is
+	  identified by the node-id of the peer; see the <command moreinfo="none">drbdsetup connect</command> command.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_del-minor.xml"/>
+	<!-- Remove a replicated device. -->
+
+	<listitem>
+	  <para>Remove a replicated device.  No lower-level device may be
+	  attached; see <command moreinfo="none">drbdsetup detach</command>.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_del-resource.xml"/>
+	<!-- Remove a resource. -->
+
+	<listitem>
+	  <para>Remove a resource.  All volumes and connections must be removed
+	  first (<command moreinfo="none">drbdsetup del-minor</command>,
+	  <command moreinfo="none">drbdsetup disconnect</command>).
+	  Alternatively, <command moreinfo="none">drbdsetup down</command> can
+	  be used to remove a resource together with all its volumes and
+	  connections.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_detach.xml"/>
+	<!-- Detach the lower-level device of a replicated device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>detach</secondary>
+	  </indexterm>
+	  <para>Detach the lower-level device of a replicated device.  Available options:
+	  <variablelist>
+	    <varlistentry>
+	      <term><option>--force</option></term>
+	      <listitem>
+		<para>Force the detach and return immediately.  This puts the
+		lower-level device into failed state until all pending I/O
+		has completed, and then detaches the device.  Any I/O not yet
+		submitted to the lower-level device (for example, because I/O
+		on the device was suspended) is assumed to have failed.</para>
+	      </listitem>
+	    </varlistentry>
+	  </variablelist>
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_disconnect.xml"/>
+	<!-- Disconnect a resource from a peer host. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>disconnect</secondary>
+	  </indexterm>
+
+	  <para>Remove a connection to a peer host.  The connection is
+	  identified by the node-id of the peer; see the <command moreinfo="none">drbdsetup connect</command> command.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_down.xml"/>
+	<!-- Take a resource down. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>down</secondary>
+	  </indexterm>
+
+	  <para>Take a resource down by removing all volumes, connections, and
+	    the resource itself.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_dstate.xml"/>
+	<!-- Show the current disk state of a lower-level device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>dstate</secondary>
+	  </indexterm>
+
+	  <para>Show the current disk state of a lower-level device.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_events2.xml"/>
+	<!-- Show the current state and all state changes of all resources. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>events2</secondary>
+	  </indexterm>
+
+	  <para>Show the current state of all configured DRBD objects, followed
+	    by all changes to the state.</para>
+
+	  <para>The output format is meant to be human as well as machine
+	    readable. The line starts with a word that indicates the kind of event:
+	    <option>exists</option> for an existing object;
+	    <option>create</option>, <option>destroy</option>, and
+	    <option>change</option> if an object is created, destroyed, or
+	    changed; or <option>call</option> or <option>response</option> if
+	    an event handler is called or it returns.  The second word indicates
+	    the object the event applies to: <option>resource</option>,
+	    <option>device</option>, <option>connection</option>,
+	    <option>peer-device</option>, <option>helper</option>, or a dash
+	    (<option>-</option>) to indicate that the current state has been
+	    dumped completely.</para>
+
+	  <para>The remaining words identify the object and describe the state
+	    that he object is in.  Available options:
+
+	    <variablelist>
+	      <varlistentry>
+		<term><option>--now</option></term>
+
+		<listitem>
+		  <para>Terminate after reporting the current state.  The
+		    default is to continuously listen and report state
+		    changes.</para>
+		</listitem>
+	      </varlistentry>
+
+	      <varlistentry>
+		<term><option>--statistics</option></term>
+
+		<listitem>
+		  <para>Include statistics in the output.</para>
+		</listitem>
+	      </varlistentry>
+	    </variablelist>
+	  </para>
+	</listitem>
+    </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_get-gi.xml"/>
+	<!-- Show the data generation identifiers for a device on a particular connection. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>get-gi</secondary>
+	  </indexterm>
+
+	  <para>Show the data generation identifiers for a device on a
+	  particular connection.  The device is identified by its volume
+	  number.  The connection is identified by its endpoints; see the
+	  <command moreinfo="none">drbdsetup connect</command> command.</para>
+
+	  <para>The output consists of the current UUID, bitmap UUID, and the
+	  first two history UUIDS, folowed by a set of flags.  The current UUID
+	  and history UUIDs are device specific; the bitmap UUID and flags are
+	  peer device specific.  This command only shows the first two history
+	  UUIDs.  Internally, DRBD maintains one history UUID for each possible
+	  peer device.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_invalidate.xml"/>
+	<!-- Replace the local data of a resource with that of a peer. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>invalidate</secondary>
+	  </indexterm>
+
+	  <para>Replace the local data of a device with that of a peer.  All
+	    the local data will be marked out-of-sync, and a resync with the
+	    specified peer device will be initialted.</para>
+	  <!-- "This command will fail if the device is not part of a connected device pair." -->
+	  <!-- FIXME: What if the peer is not connected? -->
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_invalidate-remote.xml"/>
+	<!-- Replace a peer's data of a resource with the local data. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>invalidate-remote</secondary>
+	  </indexterm>
+
+	  <para>Replace a peer device's data of a resource with the local data.
+	    The peer device's data will be marked out-of-sync, and a resync
+	    from the local node to the specified peer will be initiated.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_new-current-uuid.xml"/>
+	<!-- Generate a new current UUID. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>new-current-uuid</secondary>
+	  </indexterm>
+
+	  <!-- FIXME: The description does not really explain what is going on
+	  and why; this needs to be completely analyzed and revised.  Also, we
+	  should have separate commands for creating a new current uuid and for
+	  clearing unused bitmap slots. -->
+
+	  <para>Generate a new current UUID and rotates all other UUID values. This has at least two
+	  use cases, namely to skip the initial sync, and to reduce network bandwidth when starting in
+	  a single node configuration and then later (re-)integrating a remote site.</para>
+
+	  <para>Available option: <variablelist>
+	      <varlistentry>
+		<term><option>--clear-bitmap</option></term>
+
+		<listitem>
+		  <para>Clears the sync bitmap in addition to generating a new current UUID.</para>
+		</listitem>
+	      </varlistentry>
+	    </variablelist></para>
+
+	  <para>This can be used to skip the initial sync, if you want to start from scratch. This
+	  use-case does only work on "Just Created" meta data. Necessary steps: <orderedlist continuation="restarts" inheritnum="ignore" numeration="arabic">
+	      <listitem>
+		<simpara>On <emphasis>both</emphasis> nodes, initialize meta data and configure the
+		device.</simpara>
+
+		<simpara><command moreinfo="none">drbdadm create-md --force
+		<replaceable>res</replaceable></command></simpara>
+	      </listitem>
+
+	      <listitem>
+		<simpara>They need to do the initial handshake, so they know their sizes.</simpara>
+
+		<simpara><command moreinfo="none">drbdadm up
+		<replaceable>res</replaceable></command></simpara>
+	      </listitem>
+
+	      <listitem>
+		<simpara>They are now Connected Secondary/Secondary Inconsistent/Inconsistent.
+		Generate a new current-uuid and clear the dirty bitmap.</simpara>
+
+		<simpara><command moreinfo="none">drbdadm --clear-bitmap new-current-uuid
+		<replaceable>res</replaceable></command></simpara>
+	      </listitem>
+
+	      <listitem>
+		<simpara>They are now Connected Secondary/Secondary UpToDate/UpToDate. Make one side
+		primary and create a file system.</simpara>
+
+		<simpara><command moreinfo="none">drbdadm primary
+		<replaceable>res</replaceable></command></simpara>
+
+		<simpara><command moreinfo="none">mkfs -t <replaceable>fs-type</replaceable> $(drbdadm
+		sh-dev <replaceable>res</replaceable>)</command></simpara>
+		<!-- FIXME: sh-dev can probably return more than one device; we can no longer use it like this. -->
+	      </listitem>
+	    </orderedlist></para>
+
+	  <para>One obvious side-effect is that the replica is full of old garbage (unless you made
+	  them identical using other means), so any online-verify is expected to find any number of
+	  out-of-sync blocks.</para>
+
+	  <para><emphasis>You must not use this on pre-existing data!</emphasis> Even though it may
+	  appear to work at first glance, once you switch to the other node, your data is toast, as it
+	  never got replicated. So <emphasis>do not leave out the mkfs</emphasis> (or
+	  equivalent).</para>
+
+	  <para>This can also be used to shorten the initial resync of a cluster where the second node
+	  is added after the first node is gone into production, by means of disk shipping. This
+	  use-case works on disconnected devices only, the device may be in primary or secondary
+	  role.</para>
+
+	  <para>The necessary steps on the current active server are: <orderedlist continuation="restarts" inheritnum="ignore" numeration="arabic">
+	      <listitem>
+		<simpara><command moreinfo="none">drbdsetup new-current-uuid --clear-bitmap <replaceable>minor</replaceable>
+		</command></simpara>
+	      </listitem>
+
+	      <listitem>
+		<simpara>Take the copy of the current active server. E.g. by pulling a disk out of the
+		RAID1 controller, or by copying with dd. You need to copy the actual data, and the
+		meta data.</simpara>
+	      </listitem>
+
+	      <listitem>
+		<simpara><command moreinfo="none">drbdsetup new-current-uuid <replaceable>minor</replaceable>
+		</command></simpara>
+	      </listitem>
+	    </orderedlist> Now add the disk to the new secondary node, and join it to the cluster. You
+	  will get a resync of that parts that were changed since the first call to <command moreinfo="none">drbdsetup</command> in step 1.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_new-minor.xml"/>
+	<!-- Create a new replicated device within a resource. -->
+
+	<listitem>
+	  <para>Create a new replicated device within a resource.  The command
+	    creates a block device inode for the replicated device (by default,
+	    /dev/drbd<replaceable>minor</replaceable>).  The
+	    <replaceable>volume</replaceable> number identifies the device
+	    within the <replaceable>resource</replaceable>.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_new-resource.xml"/>
+	<!-- Create a new resource. -->
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_resource-options.xml"/>
+	<!-- Change the resource options of an existing resource. -->
+
+	<listitem>
+	  <para>The <option>new-resource</option> command creates a new
+	    resource.  The <option>resource-options</option> command changes
+	    the resource options of an existing resource.  Available options:
+
+	  <variablelist>
+	    <varlistentry><term xml:id="auto-promote"><option>--auto-promote <replaceable>bool-value</replaceable></option></term><listitem><para>A resource must be promoted to primary role before any of its devices
+      can be mounted or opened for writing.</para><para>Before DRBD 9, this could only be done explicitly ("drbdadm
+      primary").  Since DRBD 9, the <option>auto-promote</option> parameter
+      allows to automatically promote a resource to primary role when one of
+      its devices is mounted or opened for writing.  As soon as all devices are
+      unmounted or closed with no more remaining users, the role of the
+      resource changes back to secondary.</para><para>Automatic promotion only succeeds if the cluster state allows it
+      (that is, if an explicit <command moreinfo="none">drbdadm
+	primary</command> command would succeed).  Otherwise, mounting or
+      opening the device fails as it already did before DRBD 9: the
+      <citerefentry><refentrytitle>mount</refentrytitle><manvolnum>2</manvolnum></citerefentry>
+      system call fails with errno set to EROFS (Read-only file system); the
+      <citerefentry><refentrytitle>open</refentrytitle><manvolnum>2</manvolnum></citerefentry>
+      system call fails with errno set to EMEDIUMTYPE (wrong medium
+      type).</para><para>Irrespective of the <option>auto-promote</option> parameter, if a
+      device is promoted explicitly (<command moreinfo="none">drbdadm
+	primary</command>), it also needs to be demoted explicitly (<command moreinfo="none">drbdadm secondary</command>).</para><para>The <option>auto-promote</option> parameter is available since DRBD
+      9.0.0, and defaults to <constant>yes</constant>.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="cpu-mask"><option>--cpu-mask <replaceable>cpu-mask</replaceable></option></term><listitem><para> Set the cpu affinity mask for DRBD kernel threads.  The
+	cpu mask is specified as a hexadecimal number.  The default value is 0,
+	which lets the scheduler decide which kernel threads run on which CPUs.
+	CPU numbers in <option>cpu-mask</option> which do not exist in the
+	system are ignored.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="on-no-data-accessible"><option>--on-no-data-accessible
+	<replaceable>policy</replaceable></option></term><listitem><para>Determine how to deal with I/O requests when the requested data is
+	not available locally or remotely (for example, when all disks have
+	failed).  The defined policies are:
+
+	<variablelist>
+	  <varlistentry>
+	    <term xml:id="io-error"><option>io-error</option></term>
+	    <listitem><para>
+		System calls fail with errno set to EIO.
+	    </para></listitem>
+	  </varlistentry>
+	  <varlistentry>
+	    <term xml:id="suspend-io"><option>suspend-io</option></term>
+	    <listitem><para>
+		The resource suspends I/O.  I/O can be resumed by (re)attaching
+		the lower-level device, by connecting to a peer which has
+		access to the data, or by forcing DRBD to resume I/O with
+		<command moreinfo="none">drbdadm resume-io
+		  <replaceable>res</replaceable></command>.  When no data is
+		available, forcing I/O to resume will result in the same
+		behavior as the <option>io-error</option> policy.
+	    </para></listitem>
+	  </varlistentry>
+	</variablelist>
+
+      This setting is available since DRBD 8.3.9; the default policy is
+	<option>io-error</option>. </para></listitem></varlistentry>
+	    <varlistentry><term xml:id="peer-ack-window"><option>--peer-ack-window <replaceable>value</replaceable></option></term><listitem><para>
+	On each node and for each device, DRBD maintains a bitmap of the
+	differences between the local and remote data for each peer device.
+	For example, in a three-node setup (nodes A, B, C) each with a single
+	device, every node maintains one bitmap for each of its peers.</para><para>When nodes receive write requests, they know how to update the
+	bitmaps for the writing node, but not how to update the bitmaps between
+	themselves.  In this example, when a write request propagates from node
+	A to B and C, nodes B and C know that they have the same data as node
+	A, but not whether or not they both have the same data.</para><para>As a remedy, the writing node occasionally sends peer-ack packets
+	to its peers which tell them which state they are in relative to each
+	other.</para><para>The <option>peer-ack-window</option> parameter specifies how much
+	data a primary node may send before sending a peer-ack packet.  A low
+	value causes increased network traffic; a high value causes less
+	network traffic but higher memory consumption on secondary nodes and
+	higher resync times between the secondary nodes after primary node
+	failures. (Note: peer-ack packets may be sent due to other reasons as
+        well, e.g. membership changes or expiry of the
+        <option>peer-ack-delay</option> timer.)</para><para>The default value for <option>peer-ack-window</option> is 2 MiB,
+	the default unit is sectors.  This option is available since
+	9.0.0.</para></listitem></varlistentry>
+	    <varlistentry><term xml:id="peer-ack-delay"><option>--peer-ack-delay <replaceable>expiry-time</replaceable></option></term><listitem><para>
+	If after the last finished write request no new write request gets issued for
+	<replaceable>expiry-time</replaceable>, then a peer-ack packet is sent.
+	If a new write request is issued before the timer expires, the timer gets reset
+	to <replaceable>expiry-time</replaceable>. (Note: peer-ack packets may be sent
+        due to other reasons as well, e.g. membership changes or the
+        <option>peer-ack-window</option> option.)</para><para>This parameter may influence resync behavior on remote nodes. Peer nodes
+	need to wait until they receive an peer-ack for releasing a lock on an AL-extent.
+	Resync operations between peers may need to wait for for these locks.
+	</para><para>The default value for <option>peer-ack-delay</option> is 100 milliseconds,
+	the default unit is milliseconds.  This option is available since
+	9.0.0.</para></listitem></varlistentry>
+	  </variablelist>
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_outdate.xml"/>
+	<!-- Mark the data on a lower-level device as outdated. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>outdate</secondary>
+	  </indexterm>
+
+	  <para>Mark the data on a lower-level device as outdated.  This
+	    is used for fencing, and prevents the resource the device is part
+	    of from becoming primary in the future.  See the
+	    <option>--fencing</option> disk option.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_pause-sync.xml"/>
+	<!-- Stop resynchronizing between a local and a peer device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>pause-sync</secondary>
+	  </indexterm>
+
+	  <para>Stop resynchronizing between a local and a peer device by
+	    setting the local pause flag.  The resync can only resume if the
+	    pause flags on both sides of a connection are cleared.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_primary.xml"/>
+	<!-- Change the role of a node in a resource to primary. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>primary</secondary>
+	  </indexterm>
+
+	  <para>Change the role of a node in a resource to primary.  This
+	  allows the replicated devices in this resource to be mounted or
+	  opened for writing.  Available options:</para>
+
+	  <variablelist>
+	    <varlistentry>
+	      <term><option>--overwrite-data-of-peer</option></term>
+
+	      <listitem>
+		<para>This option is an alias for the <option>--force</option> option.</para>
+	      </listitem>
+	    </varlistentry>
+	  </variablelist>
+
+	  <variablelist>
+	    <varlistentry>
+	      <term><option>--force</option></term>
+
+	      <listitem>
+		<para>Force the resource to become primary even if some devices
+		  are not guaranteed to have up-to-date data.  This option is
+		  used to turn one of the nodes in a newly created cluster into
+		  the primary node, or when manually recovering from a
+		  disaster.</para>
+		<para>Note that this can lead to split-brain scenarios.  Also,
+		  when forcefully turning an inconsistent device into an
+		  up-to-date device, it is highly recommended to use any
+		  integrity checks available (such as a filesystem check) to
+		  make sure that the device can at least be used without
+		  crashing the system.</para>
+	      </listitem>
+	    </varlistentry>
+	  </variablelist>
+
+	  <para>Note that DRBD usually only allows one node in a cluster to be
+	    in primary role at any time; this allows DRBD to coordinate access
+	    to the devices in a resource across nodes.  The
+	    <option>--allow-two-primaries</option> network option changes this;
+	    in that case, a mechanism outside of DRBD needs to coordinate
+	    device access.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_resize.xml"/>
+	<!-- Reexamine the lower-level device sizes to resize a replicated device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>resize</secondary>
+	  </indexterm>
+
+	  <para>Reexamine the size of the lower-level devices of a replicated
+	  device on all nodes.  This command is called after the lower-level
+	  devices on all nodes have been grown to adjust the size of the
+	  replicated device.  Available options:
+
+	    <variablelist>
+	      <varlistentry>
+		<term><option>--assume-peer-has-space</option></term>
+
+		<listitem>
+		  <para>Resize the device even if some of the peer devices are
+		  not connected at the moment.  DRBD will try to resize the peer
+		  devices when they next connect.  It will refuse to connect to a
+		  peer device which is too small.</para>
+		</listitem>
+	      </varlistentry>
+
+	      <varlistentry>
+		<term><option>--assume-clean</option></term>
+		<listitem>
+		  <para>Do not resynchronize the added disk space; instead,
+		  assume that it is identical on all nodes.  This option can be
+		  used when the disk space is uninitialized and differences do
+		  not matter, or when it is known to be identical on all nodes.
+		  See the <command moreinfo="none">drbdsetup verify</command>
+		  command.</para>
+		</listitem>
+	      </varlistentry>
+
+	      <varlistentry>
+		<term><option>--size <replaceable>val</replaceable></option></term>
+		<listitem>
+		  <para>This option can be used to online shrink the usable
+		  size of a drbd device. It's the users responsibility to
+		  make sure that a file system on the device is not
+		  truncated by that operation.</para>
+		</listitem>
+	      </varlistentry>
+
+	      <varlistentry>
+		<term><option>--al-stripes <replaceable>val</replaceable></option>
+		<option>--al-stripes <replaceable>val</replaceable></option></term>
+		<listitem>
+		  <para>These options may be used to change the layout of
+		  the activity log online. In case of internal meta data
+		  this may invovle shrinking the user visible size at the
+		  same time (unsing the <option>--size</option>) or
+		  increasing the avalable space on the backing
+		  devices.</para>
+		</listitem>
+	      </varlistentry>
+
+	    </variablelist>
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_resume-io.xml"/>
+	<!-- Resume I/O on a replicated device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>resume-io</secondary>
+	  </indexterm>
+
+	  <para>Resume I/O on a replicated device.  See the
+	  <option>--fencing</option> net option.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_resume-sync.xml"/>
+	<!-- Resume the resynchronization between a local and a peer device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>resume-sync</secondary>
+	  </indexterm>
+
+	  <para>Allow resynchronization to resume by clearing the local sync pause flag.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_role.xml"/>
+	<!-- Show the current role of a resource. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>role</secondary>
+	  </indexterm>
+
+	  <para>Show the current role of a resource.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_secondary.xml"/>
+	<!-- Change the role of a node in a resource to secondary. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>secondary</secondary>
+	  </indexterm>
+
+	  <para>Change the role of a node in a resource to secondary.  This
+	  command fails if the replicated device is in use.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_show.xml"/>
+	<!-- Show the current configuration of a resource, or of all resources. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>show</secondary>
+	  </indexterm>
+
+	  <para>Show the current configuration of a resource, or of all
+	  resources.  Available options:
+
+	    <variablelist>
+	      <varlistentry>
+		<term><option>--show-defaults</option></term>
+
+		<listitem>
+		  <para>Show all configuration parameters, even the ones with
+		  default values.  Normally, parameters with default values are
+		  not shown.</para>
+		</listitem>
+	      </varlistentry>
+	    </variablelist>
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_show-gi.xml"/>
+	<!-- Show data generation identifiers for a device and peer device, with explanations. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>show-gi</secondary>
+	  </indexterm>
+
+	  <para>Show the data generation identifiers for a device on a
+	  particular connection.  In addition, explain the output.  The output
+	  otherwise is the same as in the <command moreinfo="none">drbdsetup
+	  get-gi</command> command.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term><command moreinfo="none">drbdsetup</command><arg choice="plain" rep="norepeat">state</arg></term>
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>state</secondary>
+	  </indexterm>
+
+	  <para>This is an alias for <command moreinfo="none">drbdsetup
+	  role</command>. Deprecated.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_status.xml"/>
+	<!-- Show the status of a resource, or of all resources. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>status</secondary>
+	  </indexterm>
+
+	  <para>Show the status of a resource, or of all resources.  The
+	  output consists of one paragraph for each configured resource.  Each
+	  paragraph contains one line for each resource, followed by one line
+	  for each device, and one line for each connection.  The device and
+	  connection lines are indented.  The connection lines are followed by
+	  one line for each peer device; these lines are indented against the
+	  connection line.</para>
+
+	  <para>Long lines are wrapped around at terminal width, and indented
+	  to indicate how the lines belongs together.  Available options:
+
+	    <variablelist>
+	      <varlistentry>
+		<term><option>--verbose</option></term>
+
+		<listitem>
+		  <para>Include more information in the output even when it is
+		  likely redundant or irrelevant.</para>
+		</listitem>
+	      </varlistentry>
+
+	      <varlistentry>
+		<term><option>--statistics</option></term>
+
+		<listitem>
+		  <para>Include data transfer statistics in the output.</para>
+		</listitem>
+	      </varlistentry>
+
+	      <varlistentry>
+		<term>
+		  <option>--color=<group choice="req" rep="norepeat">
+		      <arg choice="plain" rep="norepeat">always</arg>
+		      <arg choice="plain" rep="norepeat">auto</arg>
+		      <arg choice="plain" rep="norepeat">never</arg>
+		    </group>
+		  </option>
+		</term>
+
+		<listitem>
+		  <para>Colorize the output.  With
+		    <option>--color=auto</option>, <option>drbdsetup</option>
+		    emits color codes only when standard output is connected to
+		    a terminal.
+		  </para>
+		</listitem>
+	      </varlistentry>
+	    </variablelist>
+	  </para>
+
+	  <para>For example, the non-verbose output for a resource with only
+	  one connection and only one volume could look like this:
+	      <programlisting format="linespecific">
+drbd0 role:Primary
+  disk:UpToDate
+  host2.example.com role:Secondary
+    disk:UpToDate
+	      </programlisting>
+	    </para>
+
+	    <para>With the <option>--verbose</option> option, the same resource
+	    could be reported as:
+	      <programlisting format="linespecific">
+drbd0 node-id:1 role:Primary suspended:no
+  volume:0 minor:1 disk:UpToDate blocked:no
+  host2.example.com local:ipv4:192.168.123.4:7788
+      peer:ipv4:192.168.123.2:7788 node-id:0 connection:WFReportParams
+      role:Secondary congested:no
+    volume:0 replication:Connected disk:UpToDate resync-suspended:no
+	      </programlisting>
+	    </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_suspend-io.xml"/>
+	<!-- Suspend I/O on a replicated device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>suspend-io</secondary>
+	  </indexterm>
+
+	  <para>Suspend I/O on a replicated device.  It is not usually
+	  necessary to use this command.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_verify.xml"/>
+	<!-- Verify the data on a lower-level device against a peer device. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>verify</secondary>
+	  </indexterm>
+
+	  <para>Start online verification, change which part of the device will
+	  be verified, or stop online verification.  The command requires the
+	  specified peer to be connected.</para>
+
+	  <para>Online verification compares each disk block on the local and
+	  peer node.  Blocks which differ between the nodes are marked
+	  as out-of-sync, but they are <emphasis>not</emphasis> automatically
+	  brought back into sync.  To bring them into sync, the resource must
+	  be disconnected and reconnected.  Progress can be monitored in the
+	  output of <command moreinfo="none">drbdsetup status
+	    --statistics</command>.  Available options:</para>
+
+	  <variablelist>
+	    <varlistentry>
+	      <term><option>--start <replaceable>position</replaceable></option></term>
+
+	      <listitem>
+		<para>Define where online verification should start.  This
+		parameter is ignored if online verification is already in
+		progress.  If the start parameter is not specified, online
+		verification will continue where it was interrupted (if the
+		connection to the peer was lost while verifying), after the
+		previous stop sector (if the previous online verification has
+		finished), or at the beginning of the device (if the end of the
+		device was reached, or online verify has not run
+		before).</para>
+
+		<para>The position on disk is specified in disk sectors (512
+		bytes) by default.</para>
+	      </listitem>
+	    </varlistentry>
+	    <varlistentry>
+	      <term><option>--stop <replaceable>position</replaceable></option></term>
+	      <listitem>
+		<para>Define where online verification should stop.  If online
+		verification is already in progress, the stop position of the
+		active online verification process is changed.  Use this to
+		stop online verification.</para>
+
+		<para>The position on disk is specified in disk sectors (512
+		bytes) by default.</para>
+	      </listitem>
+	    </varlistentry>
+	  </variablelist>
+
+	  <para>Also see the notes on data integrity in the <citerefentry>
+	  <refentrytitle>drbd.conf</refentrytitle> <manvolnum>5</manvolnum>
+	  </citerefentry> manual page.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_wait-connect-volume.xml"/>
+	<!-- Wait until a device on a peer is visible. -->
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_wait-connect-connection.xml"/>
+	<!-- Wait until all peer volumes of connection are visible. -->
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_wait-connect-resource.xml"/>
+	<!-- Wait until all connections are establised. -->
+
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_wait-sync-volume.xml"/>
+	<!-- Wait until a device on a peer is up to date. -->
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_wait-sync-connection.xml"/>
+	<!-- Wait until resync finished on all volumes of a connection. -->
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_wait-sync-resource.xml"/>
+	<!-- Wait until resync finished on all volumes. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>wait-connect-volume</secondary>
+	    <secondary>wait-connect-connection</secondary>
+	    <secondary>wait-connect-resource</secondary>
+	  </indexterm>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>wait-sync-volume</secondary>
+	    <secondary>wait-sync-connection</secondary>
+	    <secondary>wait-sync-resource</secondary>
+	  </indexterm>
+
+	  <para>The <option>wait-connect-*</option> commands waits until a device
+	  on a peer is visible.  The <option>wait-sync-*</option> commands waits
+	  until a device on a peer is up to date.  Available options for both
+	  commands:
+
+	    <variablelist>
+	      <varlistentry><term xml:id="degr-wfc-timeout"><option>--degr-wfc-timeout <replaceable>timeout</replaceable></option></term><listitem><para> Define how long to wait until all peers are
+	connected in case the cluster consisted of a single node only
+	when the system went down.  This parameter is usually set to a
+	value smaller than <option>wfc-timeout</option>.  The
+	assumption here is that peers which were unreachable before a
+	reboot are less likely to be be reachable after the reboot, so
+	waiting is less likely to help.</para><para>The timeout is specified in seconds. The default value is 0,
+	which stands for an infinite timeout.  Also see the
+	<option>wfc-timeout</option> parameter.</para></listitem></varlistentry>
+	      <varlistentry><term xml:id="outdated-wfc-timeout"><option>--outdated-wfc-timeout <replaceable>timeout</replaceable></option></term><listitem><para> Define how long to wait until all peers are
+	connected if all peers were outdated when the system went down.
+	This parameter is usually set to a value smaller than
+	<option>wfc-timeout</option>.  The assumption here is that an
+	outdated peer cannot have become primary in the meantime, so we
+	don't need to wait for it as long as for a node which was alive
+	before.</para><para>The timeout is specified in seconds. The default value is 0,
+	which stands for an infinite timeout.  Also see the
+	<option>wfc-timeout</option> parameter.</para></listitem></varlistentry>
+	      <varlistentry><term xml:id="wait-after-sb"><option>--wait-after-sb</option></term><listitem><para>This parameter causes DRBD to continue waiting in the init
+	script even when a split-brain situation has been detected, and
+	the nodes therefore refuse to connect to each other.</para></listitem></varlistentry>
+	      <varlistentry><term xml:id="wfc-timeout"><option>--wfc-timeout <replaceable>timeout</replaceable></option></term><listitem><para> Define how long the init script waits until all peers are
+	connected.  This can be useful in combination with a cluster manager
+	which cannot manage DRBD resources: when the cluster manager starts,
+	the DRBD resources will already be up and running.  With a more capable
+	cluster manager such as Pacemaker, it makes more sense to let the
+	cluster manager control DRBD resources.  The timeout is specified in
+	seconds. The default value is 0, which stands for an infinite timeout.
+	Also see the <option>degr-wfc-timeout</option> parameter.</para></listitem></varlistentry>
+	    </variablelist>
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="drbdsetup_forget-peer.xml"/>
+	<!-- Completely remove any reference to a unconnected peer from meta-data. -->
+
+	<listitem>
+	  <indexterm significance="normal">
+	    <primary>drbdsetup</primary>
+
+	    <secondary>forget-peer</secondary>
+	  </indexterm>
+
+	  <para>The <option>forget-peer</option> command removes all traces of
+	  a peer node from the meta-data. It frees a bitmap slot in the meta-data
+	  and make it avalable for futher bitmap slot allocation in case a
+	  so-far never seen node connects.</para>
+	  <para>The connection must be taken down before this command may be used.
+	  In case the peer re-connects at a later point a bit-map based resync
+	  will be turned into a full-sync.</para>
+	</listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Examples</title>
+
+    <para>Please see the <ulink url="http://www.drbd.org/users-guide/"><citetitle>DRBD User's Guide</citetitle></ulink>
+      for examples.</para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>Version</title>
+
+    <simpara>This document was revised for version 9.0.0 of the DRBD distribution.</simpara>
+  </refsect1>
+
+  <refsect1>
+    <title>Author</title>
+
+    <simpara>Written by Philipp Reisner <email>philipp.reisner@linbit.com</email> and Lars
+    Ellenberg <email>lars.ellenberg@linbit.com</email>.</simpara>
+  </refsect1>
+
+  <refsect1>
+    <title>Reporting Bugs</title>
+
+    <simpara>Report bugs to <email>drbd-user@lists.linbit.com</email>.</simpara>
+  </refsect1>
+
+  <refsect1>
+    <title>Copyright</title>
+
+    <simpara>Copyright 2001-2012 LINBIT Information Technologies, Philipp Reisner, Lars Ellenberg.
+    This is free software; see the source for copying conditions. There is NO warranty; not even
+    for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</simpara>
+  </refsect1>
+
+  <refsect1>
+    <title>See Also</title>
+
+    <para><citerefentry>
+        <refentrytitle>drbd.conf</refentrytitle>
+
+        <manvolnum>5</manvolnum>
+      </citerefentry>, <citerefentry>
+        <refentrytitle>drbd</refentrytitle>
+
+        <manvolnum>8</manvolnum>
+      </citerefentry>, <citerefentry>
+        <refentrytitle>drbddisk</refentrytitle>
+
+        <manvolnum>8</manvolnum>
+      </citerefentry>, <citerefentry>
+        <refentrytitle>drbdadm</refentrytitle>
+
+        <manvolnum>8</manvolnum>
+      </citerefentry>,
+      <ulink url="http://www.drbd.org/users-guide/"><citetitle>DRBD User's Guide</citetitle></ulink>,
+       <ulink url="http://www.drbd.org/"><citetitle>DRBD Web Site</citetitle></ulink></para>
+
+  </refsect1>
+</refentry>

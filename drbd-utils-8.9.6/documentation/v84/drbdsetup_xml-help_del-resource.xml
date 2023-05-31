@@ -1,0 +1,3 @@
+<command name="del-resource">
+	<argument>resource</argument>
+</command>

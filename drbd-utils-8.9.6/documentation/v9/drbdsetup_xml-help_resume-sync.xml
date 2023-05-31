@@ -1,0 +1,6 @@
+<command name="resume-sync">
+	<summary>Allow resynchronization to resume on a replicated device.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<argument>volume</argument>
+</command>

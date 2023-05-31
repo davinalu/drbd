@@ -1,0 +1,3 @@
+<command name="invalidate-remote">
+	<argument>minor</argument>
+</command>

@@ -1,0 +1,3 @@
+<command name="outdate">
+	<argument>minor</argument>
+</command>

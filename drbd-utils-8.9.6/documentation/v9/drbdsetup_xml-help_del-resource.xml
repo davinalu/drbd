@@ -1,0 +1,4 @@
+<command name="del-resource">
+	<summary>Remove a resource.</summary>
+	<argument>resource</argument>
+</command>

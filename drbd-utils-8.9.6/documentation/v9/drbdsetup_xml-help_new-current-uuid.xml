@@ -1,0 +1,7 @@
+<command name="new-current-uuid">
+	<summary>Generate a new current UUID.</summary>
+	<argument>minor</argument>
+	<option name="clear-bitmap" type="boolean">
+		<default>no</default>
+	</option>
+</command>

@@ -1,0 +1,7 @@
+<command name="new-path">
+	<summary>Add a path (endpoint address pair) where a peer host should be reachable.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<argument>local-addr</argument>
+	<argument>remote-addr</argument>
+</command>

@@ -1,0 +1,5 @@
+<command name="cstate">
+	<summary>Show the current state of a connection.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+</command>

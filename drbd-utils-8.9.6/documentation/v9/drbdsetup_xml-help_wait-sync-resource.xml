@@ -1,0 +1,12 @@
+<command name="wait-sync-resource">
+	<summary>Wait until resync finished on all volumes.</summary>
+	<argument>resource</argument>
+	<option name="wfc-timeout" type="string">
+	</option>
+	<option name="degr-wfc-timeout" type="string">
+	</option>
+	<option name="outdated-wfc-timeout" type="string">
+	</option>
+	<option name="wait-after-sb" type="string">
+	</option>
+</command>

@@ -1,0 +1,6 @@
+<command name="pause-sync">
+	<summary>Stop resynchronizing between a local and a peer device.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<argument>volume</argument>
+</command>

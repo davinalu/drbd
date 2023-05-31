@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<term><command moreinfo="none">drbdsetup</command><arg choice="plain" rep="norepeat">down</arg><group choice="req">
+		<arg choice="plain" rep="norepeat"><replaceable>resource</replaceable></arg>
+		<arg choice="plain" rep="norepeat"><replaceable>all</replaceable></arg>
+	</group></term>

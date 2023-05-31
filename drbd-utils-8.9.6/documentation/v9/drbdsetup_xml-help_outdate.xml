@@ -1,0 +1,4 @@
+<command name="outdate">
+	<summary>Mark the data on a lower-level device as outdated.</summary>
+	<argument>minor</argument>
+</command>

@@ -1,0 +1,8 @@
+<command name="disconnect">
+	<summary>Unconnect from a peer host.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<option name="force" type="boolean">
+		<default>no</default>
+	</option>
+</command>

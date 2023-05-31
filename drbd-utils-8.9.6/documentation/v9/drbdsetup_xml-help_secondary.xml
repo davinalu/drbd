@@ -1,0 +1,4 @@
+<command name="secondary">
+	<summary>Change the role of a node in a resource to secondary.</summary>
+	<argument>resource</argument>
+</command>

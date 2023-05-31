@@ -1,0 +1,5 @@
+<command name="new-minor">
+	<argument>resource</argument>
+	<argument>minor</argument>
+	<argument>volume</argument>
+</command>

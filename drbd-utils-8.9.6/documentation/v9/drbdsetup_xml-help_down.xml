@@ -1,0 +1,7 @@
+<command name="down">
+	<summary>Take a resource down.</summary>
+	<group>
+		<argument>resource</argument>
+		<argument>all</argument>
+	</group>
+</command>

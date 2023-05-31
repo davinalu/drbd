@@ -1,0 +1,13 @@
+<command name="wait-connect-connection">
+	<summary>Wait until all peer volumes of connection are visible.</summary>
+	<argument>resource</argument>
+	<argument>peer_node_id</argument>
+	<option name="wfc-timeout" type="string">
+	</option>
+	<option name="degr-wfc-timeout" type="string">
+	</option>
+	<option name="outdated-wfc-timeout" type="string">
+	</option>
+	<option name="wait-after-sb" type="string">
+	</option>
+</command>

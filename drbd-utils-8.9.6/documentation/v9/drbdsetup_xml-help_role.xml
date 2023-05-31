@@ -1,0 +1,4 @@
+<command name="role">
+	<summary>Show the current role of a resource.</summary>
+	<argument>resource</argument>
+</command>

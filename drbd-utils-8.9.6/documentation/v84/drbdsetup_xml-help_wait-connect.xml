@@ -1,0 +1,11 @@
+<command name="wait-connect">
+	<argument>minor</argument>
+	<option name="wfc-timeout" type="string">
+	</option>
+	<option name="degr-wfc-timeout" type="string">
+	</option>
+	<option name="outdated-wfc-timeout" type="string">
+	</option>
+	<option name="wait-after-sb" type="string">
+	</option>
+</command>

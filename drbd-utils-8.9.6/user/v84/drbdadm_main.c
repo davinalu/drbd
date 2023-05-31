@@ -1550,11 +1550,12 @@ int adm_resize(struct cfg_ctx *ctx)
 
 int _admm_generic(struct cfg_ctx *ctx, int flags)
 {
+#define LY_PARG(x) argv[x]?argv[x]:"NULL"
 	struct d_volume *vol = ctx->vol;
 	char *argv[MAX_ARGS];
 	int argc = 0;
 
-	argv[NA(argc)] = drbdmeta;
+	argv[NA(argc)] = "./user/v9/drbdmeta";
 	ssprintf(argv[NA(argc)], "%d", vol->device_minor);
 	argv[NA(argc)] = "v08";
 	if (!strcmp(vol->meta_disk, "internal")) {
@@ -1575,7 +1576,12 @@ int _admm_generic(struct cfg_ctx *ctx, int flags)
 	add_setup_options(argv, &argc);
 	argv[NA(argc)] = 0;
 
+	fprintf(stderr,
+			"lytest drbdmeta %s %s %s %s %s \n",
+		 LY_PARG(1), LY_PARG(2), LY_PARG(3), LY_PARG(4), LY_PARG(5));
+
 	return m_system_ex(argv, flags, ctx->res->name);
+#undef LY_PARG
 }
 
 static int admm_generic(struct cfg_ctx *ctx)

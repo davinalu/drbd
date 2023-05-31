@@ -1,0 +1,9 @@
+<command name="show">
+	<group>
+		<argument>resource</argument>
+		<argument>minor</argument>
+		<argument>all</argument>
+	</group>
+	<option name="show-defaults" type="flag">
+	</option>
+</command>

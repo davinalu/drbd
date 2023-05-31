@@ -1,0 +1,11 @@
+<command name="resource-options">
+	<argument>resource</argument>
+	<option name="set-defaults" type="flag">
+	</option>
+	<option name="cpu-mask" type="string">
+	</option>
+	<option name="on-no-data-accessible" type="handler">
+		<handler>io-error</handler>
+		<handler>suspend-io</handler>
+	</option>
+</command>

@@ -1,0 +1,4 @@
+<command name="del-minor">
+	<summary>Remove a replicated device.</summary>
+	<argument>minor</argument>
+</command>

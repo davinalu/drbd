@@ -1,0 +1,10 @@
+<command name="invalidate">
+	<summary>Replace the local data of a volume with that of a peer.</summary>
+	<argument>minor</argument>
+	<option name="sync-from-peer-node-id" type="numeric">
+		<min>-1</min>
+		<max>32</max>
+		<default>-1</default>
+		<unit_prefix>1</unit_prefix>
+	</option>
+</command>

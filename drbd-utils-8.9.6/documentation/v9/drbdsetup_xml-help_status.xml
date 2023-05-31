@@ -1,0 +1,13 @@
+<command name="status">
+	<summary>Show the state of a resource, or of all resources.</summary>
+	<group>
+		<argument>resource</argument>
+		<argument>all</argument>
+	</group>
+	<option name="verbose" type="flag">
+	</option>
+	<option name="statistics" type="flag">
+	</option>
+	<option name="color" type="string">
+	</option>
+</command>

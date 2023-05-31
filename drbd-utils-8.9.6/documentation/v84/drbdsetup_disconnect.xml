@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<cmdsynopsis sepchar=" "><command moreinfo="none">drbdsetup</command><arg choice="plain" rep="norepeat">disconnect</arg><arg choice="plain" rep="norepeat"><replaceable>local_addr</replaceable></arg><arg choice="plain" rep="norepeat"><replaceable>remote_addr</replaceable></arg><arg choice="opt" rep="norepeat">--force</arg></cmdsynopsis>

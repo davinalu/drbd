@@ -1,0 +1,4 @@
+<command name="check-resize">
+	<summary>Remember the current size of a lower-level device.</summary>
+	<argument>minor</argument>
+</command>

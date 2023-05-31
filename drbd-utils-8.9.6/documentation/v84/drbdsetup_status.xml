@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<cmdsynopsis sepchar=" "><command moreinfo="none">drbdsetup</command><arg choice="plain" rep="norepeat">status</arg><group choice="req">
+		<arg choice="plain" rep="norepeat"><replaceable>resource</replaceable></arg>
+		<arg choice="plain" rep="norepeat"><replaceable>all</replaceable></arg>
+	</group>
+	
+	<arg choice="opt" rep="norepeat">--color <arg choice="req" rep="norepeat"><replaceable>val</replaceable></arg></arg></cmdsynopsis>

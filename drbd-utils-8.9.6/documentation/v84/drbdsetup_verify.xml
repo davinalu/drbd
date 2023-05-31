@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<cmdsynopsis sepchar=" "><command moreinfo="none">drbdsetup</command><arg choice="plain" rep="norepeat">verify</arg><arg choice="plain" rep="norepeat"><replaceable>minor</replaceable></arg><arg choice="opt" rep="norepeat">--start <arg choice="req" rep="norepeat"><replaceable>val</replaceable></arg></arg><arg choice="opt" rep="norepeat">--stop <arg choice="req" rep="norepeat"><replaceable>val</replaceable></arg></arg></cmdsynopsis>

@@ -1,0 +1,3 @@
+<command name="check-resize">
+	<argument>minor</argument>
+</command>

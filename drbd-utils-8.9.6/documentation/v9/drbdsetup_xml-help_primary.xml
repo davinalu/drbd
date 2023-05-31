@@ -1,0 +1,7 @@
+<command name="primary">
+	<summary>Change the role of a node in a resource to primary.</summary>
+	<argument>resource</argument>
+	<option name="force" type="boolean">
+		<default>no</default>
+	</option>
+</command>
